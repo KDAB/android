@@ -1,0 +1,4 @@
+class PingPong {
+    SLOT(void ping(const QString &msg));
+    SIGNAL(pong(const QString &msg));
+}
