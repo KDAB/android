@@ -1,4 +1,4 @@
-#include <QCoreApplication>
+#include <QAndroidService>
 #include "rep_pingpong_source.h"
 
 class PingPong : public PingPongSource {
@@ -11,7 +11,7 @@ public slots:
 
 int main(int argc, char *argv[])
 {
-    QCoreApplication app(argc, argv);
+    QAndroidService app(argc, argv);
 
     QRemoteObjectHost srcNode(QUrl(QStringLiteral("local:replica")));
     PingPong pingPongServer;
