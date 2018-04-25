@@ -11,14 +11,8 @@ int main(int argc, char *argv[])
 
     // Register our QML type
     qmlRegisterType<QSurfaceTexture>("com.kdab.android", 1, 0, "SurfaceTexture");
-
-    // Create a player
-    QAndroidMediaPlayer player;
-
+    qmlRegisterType<QAndroidMediaPlayer>("com.kdab.android", 1, 0, "AndroidMediaPlayer");
     QQmlApplicationEngine engine;
-
-    // Set the player
-    engine.rootContext()->setContextProperty("_mediaPlayer", &player);
 
     engine.load(QUrl(QStringLiteral("qrc:/main.qml")));
     return app.exec();

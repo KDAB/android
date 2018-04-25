@@ -7,10 +7,11 @@
 struct State {
     // the texture transform matrix
     QMatrix4x4 uSTMatrix;
+    GLuint textureId = 0;
 
     int compare(const State *other) const
     {
-        return uSTMatrix == other->uSTMatrix ? 0 : -1;
+        return (uSTMatrix == other->uSTMatrix && textureId == other->textureId) ? 0 : -1;
     }
 };
 
@@ -19,7 +20,7 @@ class SurfaceTextureShader : QSGSimpleMaterialShader<State>
     QSG_DECLARE_SIMPLE_COMPARABLE_SHADER(SurfaceTextureShader, State)
 public:
     // vertex & fragment shaders are shamelessly "stolen" from MyGLSurfaceView.java :)
-    const char *vertexShader() const {
+    const char *vertexShader() const override {
         return
                 "uniform mat4 qt_Matrix;                            \n"
                 "uniform mat4 uSTMatrix;                            \n"
@@ -32,7 +33,7 @@ public:
                 "}";
     }
 
-    const char *fragmentShader() const {
+    const char *fragmentShader() const override {
         return
                 "#extension GL_OES_EGL_image_external : require                     \n"
                 "precision mediump float;                                           \n"
@@ -44,17 +45,19 @@ public:
                 "}";
     }
 
-    QList<QByteArray> attributes() const
+    QList<QByteArray> attributes() const override
     {
         return QList<QByteArray>() << "aPosition" << "aTextureCoord";
     }
 
-    void updateState(const State *state, const State *)
+    void updateState(const State *state, const State *) override
     {
         program()->setUniformValue(m_uSTMatrixLoc, state->uSTMatrix);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_EXTERNAL_OES, state->textureId);
     }
 
-    void resolveUniforms()
+    void resolveUniforms() override
     {
         m_uSTMatrixLoc = program()->uniformLocation("uSTMatrix");
         program()->setUniformValue("sTexture", 0); // we need to set the texture once
@@ -81,6 +84,7 @@ public:
 
         // Create and set our SurfaceTextureShader
         QSGSimpleMaterial<State> *material = SurfaceTextureShader::createMaterial();
+        material->state()->textureId = m_textureId;
         material->setFlag(QSGMaterial::Blending, false);
         setMaterial(material);
         setFlag(OwnsMaterial);
@@ -93,7 +97,7 @@ public:
         env->DeleteLocalRef(array);
     }
 
-    ~SurfaceTextureNode()
+    ~SurfaceTextureNode() override
     {
         // delete the global reference, now the gc is free to free it
         QAndroidJniEnvironment()->DeleteGlobalRef(m_uSTMatrixArray);
@@ -111,7 +115,7 @@ private:
 
 void SurfaceTextureNode::preprocess()
 {
-    QSGSimpleMaterial<State> *mat = static_cast<QSGSimpleMaterial<State> *>(material());
+    auto mat = static_cast<QSGSimpleMaterial<State> *>(material());
     if (!mat)
         return;
 
@@ -122,10 +126,6 @@ void SurfaceTextureNode::preprocess()
     m_surfaceTexture.callMethod<void>("getTransformMatrix", "([F)V", m_uSTMatrixArray);
     QAndroidJniEnvironment env;
     env->GetFloatArrayRegion(m_uSTMatrixArray, 0, 16, mat->state()->uSTMatrix.data());
-
-    // Activate and bind our texture
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_EXTERNAL_OES, m_textureId);
 }
 
 
@@ -179,6 +179,7 @@ QSGNode *QSurfaceTexture::updatePaintNode(QSGNode *n, QQuickItem::UpdatePaintNod
 
         // Create our SurfaceTextureNode
         node = new SurfaceTextureNode(m_surfaceTexture, m_textureId);
+        emit surfaceTextureChanged(this);
     }
 
     // flip vertical

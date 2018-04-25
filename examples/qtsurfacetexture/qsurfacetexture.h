@@ -18,6 +18,9 @@ public:
 protected:
     QSGNode *updatePaintNode(QSGNode *n, UpdatePaintNodeData *) override;
 
+signals:
+    void surfaceTextureChanged(QSurfaceTexture *surfaceTexture);
+
 private:
     // our texture
     uint32_t m_textureId = 0;
