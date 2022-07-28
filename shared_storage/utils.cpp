@@ -33,5 +33,13 @@ QJniObject androidContext()
 #endif
 }
 
+QString guessContentTypeFromName(const QString &name)
+{
+    return QJniObject::callStaticObjectMethod("java/net/URLConnection",
+                                              "guessContentTypeFromName",
+                                              "(Ljava/lang/String;)Ljava/lang/String;",
+                                              QJniObject::fromString(name).object()).toString();
+}
+
 } // namespace utils
 } // namespace android

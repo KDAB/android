@@ -33,6 +33,8 @@ constexpr int FLAG_GRANT_WRITE_URI_PERMISSION = 0x00000002;
 net::Uri parseAndroidUri(const QString &url);
 QJniObject fromStringList(const QStringList &list);
 QJniObject androidContext();
+QString guessContentTypeFromName(const QString &name);
+
 } // namespace Utils
 
 } // namespace android
