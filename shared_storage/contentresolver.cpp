@@ -16,6 +16,7 @@ class AndroidFile : public QFile {
 public:
     AndroidFile() {}
     virtual ~AndroidFile() {
+        flush();
         androidFileDescriptor_.callMethod<void>("close");
     }
 
