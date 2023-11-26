@@ -12,6 +12,24 @@ namespace content {
 
 using namespace utils;
 
+class AndroidFile : public QFile {
+public:
+    AndroidFile() {}
+    virtual ~AndroidFile() {
+        androidFileDescriptor_.callMethod<void>("close");
+    }
+
+    AndroidFile(const AndroidFile& a) = delete;
+    AndroidFile& operator=(AndroidFile other) = delete;
+
+    bool open(QJniObject&& androidFileDescriptor, QIODevice::OpenMode mode) {
+        androidFileDescriptor_ = androidFileDescriptor;
+        return QFile::open(androidFileDescriptor_.callMethod<jint>("getFd"), mode, QFileDevice::FileHandleFlag::DontCloseHandle);
+    }
+private:
+    QJniObject androidFileDescriptor_;
+};
+
 ContentResolver::ContentResolver()
     :  m_object{QJniObject{androidContext()}.callObjectMethod("getContentResolver",
                                                              "()Landroid/content/ContentResolver;")}
@@ -60,8 +78,8 @@ std::unique_ptr<QIODevice> ContentResolver::openUri(const net::Uri &url, QIODevi
                                                     QJniObject::fromString(openMode).object());
     if (!fileDescriptor.isValid())
         return {};
-    auto file = std::make_unique<QFile>();
-    if (!file->open(fileDescriptor.callMethod<jint>("detachFd"), mode, QFileDevice::FileHandleFlag::AutoCloseHandle))
+    auto file = std::make_unique<AndroidFile>();
+    if (!file->open(std::move(fileDescriptor), mode))
         return {};
     return file;
 }
